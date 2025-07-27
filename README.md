@@ -9,8 +9,8 @@ This repository contains the assessment for UNICEF D&A Education in UNICEF’s C
 -   Next, user can run the run_project do file to execute the project end-to-end
 -   These steps prepare the clean data and store the files in the output folder
 -   Finally, user can initiate the R project [UNICEF_Assessment] in the root folder
--   Then open the R-script [02_programs/Population_weighted_coverage.R]
--   Executing the R-script will prepare the output (Final_Output.HTML) file with chart and short explanation
+-   Then open the R-script [02_programs/Population_weighted_coverage.Rmd]
+-   Executing (knitting) the R-script will prepare the output (Final_Output.HTML) file with chart and short explanation
 
 ### 📁 The code is organized in the following manner
 
