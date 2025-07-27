@@ -1,0 +1,575 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}D:\UNICEF\UNICEF_Assessment/05_logs/logs.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}27 Jul 2025, 23:30:48
+{txt}
+{com}. 
+. do "${c -(}clone{c )-}/02_programs/data_prep.do"  
+{txt}
+{com}. 
+. // This do file cleans up the data files needed to calculate the on-track and off-track population weighted averages of ANC4 and SBA
+. 
+. // Data Clean up steps for various data files used in the analysis
+. 
+. 
+. *===============================================================================
+. // Reading on-track, off-track classification file
+. import excel using "${c -(}data{c )-}/On-track and off-track countries.xlsx", first clear
+{res}{text}(3 vars, 200 obs)
+
+{com}. 
+. rename (ISO3Code OfficialName StatusU5MR) (ccode cname status)
+{res}{txt}
+{com}. des
+
+{txt}Contains data
+  obs:{res}           200                          
+{txt} vars:{res}             3                          
+{txt}{hline}
+              storage   display    value
+variable name   type    format     label      variable label
+{hline}
+{p 0 48}{res}{bind:ccode          }{txt}{bind: str3    }{bind:{txt}%9s       }{space 1}{bind:         }{bind:  }{res}{res}ISO3Code{p_end}
+{p 0 48}{bind:cname          }{txt}{bind: str37   }{bind:{txt}%37s      }{space 1}{bind:         }{bind:  }{res}{res}OfficialName{p_end}
+{p 0 48}{bind:status         }{txt}{bind: str19   }{bind:{txt}%19s      }{space 1}{bind:         }{bind:  }{res}{res}Status.U5MR{p_end}
+{txt}{hline}
+Sorted by: 
+{res}     Note: Dataset has changed since last saved.
+{txt}
+{com}. 
+. tab status
+
+        {txt}Status.U5MR {c |}      Freq.     Percent        Cum.
+{hline 20}{c +}{hline 35}
+Acceleration Needed {c |}{res}         59       29.50       29.50
+{txt}           Achieved {c |}{res}        134       67.00       96.50
+{txt}           On Track {c |}{res}          7        3.50      100.00
+{txt}{hline 20}{c +}{hline 35}
+              Total {c |}{res}        200      100.00
+{txt}
+{com}. 
+. replace status = "On-track" if inlist(status, "Achieved", "On Track")
+{txt}(141 real changes made)
+
+{com}. replace status = "Off-track" if status == "Acceleration Needed"
+{txt}(59 real changes made)
+
+{com}. 
+. save "${c -(}output{c )-}/status.dta", replace 
+{txt}file D:\UNICEF\UNICEF_Assessment/03_output/status.dta saved
+
+{com}. 
+. *===============================================================================
+. // Reading ANC4 and SBA data file retreived from UNICEF Data Warehouse as on 07/27/2025
+. import excel using "${c -(}data{c )-}/GLOBAL_DATAFLOW_2018-2022.xlsx", first clear 
+{res}{text}(21 vars, 1,325 obs)
+
+{com}. 
+. rename *, lower
+{res}{txt}
+{com}. 
+. rename (geographicarea time_period obs_value data_source) (cname year val_ source_)
+{res}{txt}
+{com}. 
+. keep cname indicator year val_ source_  //sex
+{txt}
+{com}. drop in 1325
+{txt}(1 observation deleted)
+
+{com}. unique cname
+{txt}Number of unique values of cname is  {res}222
+{txt}Number of records is  {res}1324
+{txt}
+{com}. 
+. destring year val_, replace
+{txt}year: all characters numeric; {res}replaced {txt}as {res}int
+{txt}val_: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}. 
+. //replace sex = "_mf" if sex == "Total"
+. 
+. tab indicator,m
+
+                              {txt}Indicator {c |}      Freq.     Percent        Cum.
+{hline 40}{c +}{hline 35}
+Antenatal care 4+ visits - percentage.. {c |}{res}        512       38.67       38.67
+{txt}Skilled birth attendant - percentage .. {c |}{res}        812       61.33      100.00
+{txt}{hline 40}{c +}{hline 35}
+                                  Total {c |}{res}      1,324      100.00
+{txt}
+{com}. replace indicator = "anc4" if indicator == "Antenatal care 4+ visits - percentage of women (aged 15-49 years) attended at least four times during pregnancy by any provider"
+{txt}(512 real changes made)
+
+{com}. replace indicator = "sba" if indicator == "Skilled birth attendant - percentage of deliveries attended by skilled health personnel"
+{txt}(812 real changes made)
+
+{com}. 
+. gsort cname indicator year
+{txt}
+{com}. 
+. //Duplicates check
+. duplicates report cname indicator year // Duplicates exist in the data 
+
+{p 0 4}{txt}Duplicates in terms of {res} cname indicator year{p_end}
+
+{txt}{hline 10}{c TT}{hline 27}
+   copies {c |} observations       surplus
+{hline 10}{c +}{hline 27}
+        1 {c |}         {res}1104             0
+        {txt}2 {c |}          {res}150            75
+        {txt}3 {c |}           {res}30            20
+        {txt}4 {c |}           {res}40            30
+{txt}{hline 10}{c BT}{hline 27}
+
+{com}. duplicates list cname indicator year  // Duplicates exist within regional estimates
+
+{p 0 4}{txt}Duplicates in terms of {res} cname indicator year{p_end}
+{txt}
+  {c TLC}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c TRC}
+  {c |} {res}group:   obs:                             cname   indica~r   year {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}     1    361             East Asia and Pacific       anc4   2018 {txt}{c |}
+  {c |} {res}     1    362             East Asia and Pacific       anc4   2018 {txt}{c |}
+  {c |} {res}     2    363             East Asia and Pacific       anc4   2019 {txt}{c |}
+  {c |} {res}     2    364             East Asia and Pacific       anc4   2019 {txt}{c |}
+  {c |} {res}     3    365             East Asia and Pacific       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}     3    366             East Asia and Pacific       anc4   2020 {txt}{c |}
+  {c |} {res}     4    367             East Asia and Pacific       anc4   2021 {txt}{c |}
+  {c |} {res}     4    368             East Asia and Pacific       anc4   2021 {txt}{c |}
+  {c |} {res}     5    369             East Asia and Pacific       anc4   2022 {txt}{c |}
+  {c |} {res}     5    370             East Asia and Pacific       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}     6    371             East Asia and Pacific        sba   2018 {txt}{c |}
+  {c |} {res}     6    372             East Asia and Pacific        sba   2018 {txt}{c |}
+  {c |} {res}     7    373             East Asia and Pacific        sba   2019 {txt}{c |}
+  {c |} {res}     7    374             East Asia and Pacific        sba   2019 {txt}{c |}
+  {c |} {res}     8    375             East Asia and Pacific        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}     8    376             East Asia and Pacific        sba   2020 {txt}{c |}
+  {c |} {res}     9    377             East Asia and Pacific        sba   2021 {txt}{c |}
+  {c |} {res}     9    378             East Asia and Pacific        sba   2021 {txt}{c |}
+  {c |} {res}    10    379             East Asia and Pacific        sba   2022 {txt}{c |}
+  {c |} {res}    10    380             East Asia and Pacific        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    11    421   Eastern Europe and Central Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    11    422   Eastern Europe and Central Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    12    423   Eastern Europe and Central Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    12    424   Eastern Europe and Central Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    13    425   Eastern Europe and Central Asia       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    13    426   Eastern Europe and Central Asia       anc4   2020 {txt}{c |}
+  {c |} {res}    14    427   Eastern Europe and Central Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    14    428   Eastern Europe and Central Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    15    429   Eastern Europe and Central Asia       anc4   2022 {txt}{c |}
+  {c |} {res}    15    430   Eastern Europe and Central Asia       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    16    431   Eastern Europe and Central Asia        sba   2018 {txt}{c |}
+  {c |} {res}    16    432   Eastern Europe and Central Asia        sba   2018 {txt}{c |}
+  {c |} {res}    17    433   Eastern Europe and Central Asia        sba   2019 {txt}{c |}
+  {c |} {res}    17    434   Eastern Europe and Central Asia        sba   2019 {txt}{c |}
+  {c |} {res}    18    435   Eastern Europe and Central Asia        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    18    436   Eastern Europe and Central Asia        sba   2020 {txt}{c |}
+  {c |} {res}    19    437   Eastern Europe and Central Asia        sba   2021 {txt}{c |}
+  {c |} {res}    19    438   Eastern Europe and Central Asia        sba   2021 {txt}{c |}
+  {c |} {res}    20    439   Eastern Europe and Central Asia        sba   2022 {txt}{c |}
+  {c |} {res}    20    440   Eastern Europe and Central Asia        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    21    461       Eastern and Southern Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    21    462       Eastern and Southern Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    22    463       Eastern and Southern Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    22    464       Eastern and Southern Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    23    465       Eastern and Southern Africa       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    23    466       Eastern and Southern Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    24    467       Eastern and Southern Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    24    468       Eastern and Southern Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    25    469       Eastern and Southern Africa       anc4   2022 {txt}{c |}
+  {c |} {res}    25    470       Eastern and Southern Africa       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    26    471       Eastern and Southern Africa        sba   2018 {txt}{c |}
+  {c |} {res}    26    472       Eastern and Southern Africa        sba   2018 {txt}{c |}
+  {c |} {res}    27    473       Eastern and Southern Africa        sba   2019 {txt}{c |}
+  {c |} {res}    27    474       Eastern and Southern Africa        sba   2019 {txt}{c |}
+  {c |} {res}    28    475       Eastern and Southern Africa        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    28    476       Eastern and Southern Africa        sba   2020 {txt}{c |}
+  {c |} {res}    29    477       Eastern and Southern Africa        sba   2021 {txt}{c |}
+  {c |} {res}    29    478       Eastern and Southern Africa        sba   2021 {txt}{c |}
+  {c |} {res}    30    479       Eastern and Southern Africa        sba   2022 {txt}{c |}
+  {c |} {res}    30    480       Eastern and Southern Africa        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    31    534                            Europe        sba   2018 {txt}{c |}
+  {c |} {res}    31    535                            Europe        sba   2018 {txt}{c |}
+  {c |} {res}    32    536                            Europe        sba   2019 {txt}{c |}
+  {c |} {res}    32    537                            Europe        sba   2019 {txt}{c |}
+  {c |} {res}    33    538                            Europe        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    33    539                            Europe        sba   2020 {txt}{c |}
+  {c |} {res}    34    540                            Europe        sba   2021 {txt}{c |}
+  {c |} {res}    34    541                            Europe        sba   2021 {txt}{c |}
+  {c |} {res}    35    542                            Europe        sba   2022 {txt}{c |}
+  {c |} {res}    35    543                            Europe        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    36    544           Europe and Central Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    36    545           Europe and Central Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    37    546           Europe and Central Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    37    547           Europe and Central Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    38    548           Europe and Central Asia       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    38    549           Europe and Central Asia       anc4   2020 {txt}{c |}
+  {c |} {res}    39    550           Europe and Central Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    39    551           Europe and Central Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    40    552           Europe and Central Asia       anc4   2022 {txt}{c |}
+  {c |} {res}    40    553           Europe and Central Asia       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    41    554           Europe and Central Asia        sba   2018 {txt}{c |}
+  {c |} {res}    41    555           Europe and Central Asia        sba   2018 {txt}{c |}
+  {c |} {res}    42    556           Europe and Central Asia        sba   2019 {txt}{c |}
+  {c |} {res}    42    557           Europe and Central Asia        sba   2019 {txt}{c |}
+  {c |} {res}    43    558           Europe and Central Asia        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    43    559           Europe and Central Asia        sba   2020 {txt}{c |}
+  {c |} {res}    44    560           Europe and Central Asia        sba   2021 {txt}{c |}
+  {c |} {res}    44    561           Europe and Central Asia        sba   2021 {txt}{c |}
+  {c |} {res}    45    562           Europe and Central Asia        sba   2022 {txt}{c |}
+  {c |} {res}    45    563           Europe and Central Asia        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    46    667   Latin America and the Caribbean       anc4   2018 {txt}{c |}
+  {c |} {res}    46    668   Latin America and the Caribbean       anc4   2018 {txt}{c |}
+  {c |} {res}    46    669   Latin America and the Caribbean       anc4   2018 {txt}{c |}
+  {c |} {res}    46    670   Latin America and the Caribbean       anc4   2018 {txt}{c |}
+  {c |} {res}    47    671   Latin America and the Caribbean       anc4   2019 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    47    672   Latin America and the Caribbean       anc4   2019 {txt}{c |}
+  {c |} {res}    47    673   Latin America and the Caribbean       anc4   2019 {txt}{c |}
+  {c |} {res}    47    674   Latin America and the Caribbean       anc4   2019 {txt}{c |}
+  {c |} {res}    48    675   Latin America and the Caribbean       anc4   2020 {txt}{c |}
+  {c |} {res}    48    676   Latin America and the Caribbean       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    48    677   Latin America and the Caribbean       anc4   2020 {txt}{c |}
+  {c |} {res}    48    678   Latin America and the Caribbean       anc4   2020 {txt}{c |}
+  {c |} {res}    49    679   Latin America and the Caribbean       anc4   2021 {txt}{c |}
+  {c |} {res}    49    680   Latin America and the Caribbean       anc4   2021 {txt}{c |}
+  {c |} {res}    49    681   Latin America and the Caribbean       anc4   2021 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    49    682   Latin America and the Caribbean       anc4   2021 {txt}{c |}
+  {c |} {res}    50    683   Latin America and the Caribbean       anc4   2022 {txt}{c |}
+  {c |} {res}    50    684   Latin America and the Caribbean       anc4   2022 {txt}{c |}
+  {c |} {res}    50    685   Latin America and the Caribbean       anc4   2022 {txt}{c |}
+  {c |} {res}    50    686   Latin America and the Caribbean       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    51    687   Latin America and the Caribbean        sba   2018 {txt}{c |}
+  {c |} {res}    51    688   Latin America and the Caribbean        sba   2018 {txt}{c |}
+  {c |} {res}    51    689   Latin America and the Caribbean        sba   2018 {txt}{c |}
+  {c |} {res}    51    690   Latin America and the Caribbean        sba   2018 {txt}{c |}
+  {c |} {res}    52    691   Latin America and the Caribbean        sba   2019 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    52    692   Latin America and the Caribbean        sba   2019 {txt}{c |}
+  {c |} {res}    52    693   Latin America and the Caribbean        sba   2019 {txt}{c |}
+  {c |} {res}    52    694   Latin America and the Caribbean        sba   2019 {txt}{c |}
+  {c |} {res}    53    695   Latin America and the Caribbean        sba   2020 {txt}{c |}
+  {c |} {res}    53    696   Latin America and the Caribbean        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    53    697   Latin America and the Caribbean        sba   2020 {txt}{c |}
+  {c |} {res}    53    698   Latin America and the Caribbean        sba   2020 {txt}{c |}
+  {c |} {res}    54    699   Latin America and the Caribbean        sba   2021 {txt}{c |}
+  {c |} {res}    54    700   Latin America and the Caribbean        sba   2021 {txt}{c |}
+  {c |} {res}    54    701   Latin America and the Caribbean        sba   2021 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    54    702   Latin America and the Caribbean        sba   2021 {txt}{c |}
+  {c |} {res}    55    703   Latin America and the Caribbean        sba   2022 {txt}{c |}
+  {c |} {res}    55    704   Latin America and the Caribbean        sba   2022 {txt}{c |}
+  {c |} {res}    55    705   Latin America and the Caribbean        sba   2022 {txt}{c |}
+  {c |} {res}    55    706   Latin America and the Caribbean        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    56    769      Middle East and North Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    56    770      Middle East and North Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    57    771      Middle East and North Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    57    772      Middle East and North Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    58    773      Middle East and North Africa       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    58    774      Middle East and North Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    59    775      Middle East and North Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    59    776      Middle East and North Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    60    777      Middle East and North Africa       anc4   2022 {txt}{c |}
+  {c |} {res}    60    778      Middle East and North Africa       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    61    779      Middle East and North Africa        sba   2018 {txt}{c |}
+  {c |} {res}    61    780      Middle East and North Africa        sba   2018 {txt}{c |}
+  {c |} {res}    62    781      Middle East and North Africa        sba   2019 {txt}{c |}
+  {c |} {res}    62    782      Middle East and North Africa        sba   2019 {txt}{c |}
+  {c |} {res}    63    783      Middle East and North Africa        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    63    784      Middle East and North Africa        sba   2020 {txt}{c |}
+  {c |} {res}    64    785      Middle East and North Africa        sba   2021 {txt}{c |}
+  {c |} {res}    64    786      Middle East and North Africa        sba   2021 {txt}{c |}
+  {c |} {res}    65    787      Middle East and North Africa        sba   2022 {txt}{c |}
+  {c |} {res}    65    788      Middle East and North Africa        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    66   1027                        South Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    66   1028                        South Asia       anc4   2018 {txt}{c |}
+  {c |} {res}    67   1029                        South Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    67   1030                        South Asia       anc4   2019 {txt}{c |}
+  {c |} {res}    68   1031                        South Asia       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    68   1032                        South Asia       anc4   2020 {txt}{c |}
+  {c |} {res}    69   1033                        South Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    69   1034                        South Asia       anc4   2021 {txt}{c |}
+  {c |} {res}    70   1035                        South Asia       anc4   2022 {txt}{c |}
+  {c |} {res}    70   1036                        South Asia       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    71   1037                        South Asia        sba   2018 {txt}{c |}
+  {c |} {res}    71   1038                        South Asia        sba   2018 {txt}{c |}
+  {c |} {res}    72   1039                        South Asia        sba   2019 {txt}{c |}
+  {c |} {res}    72   1040                        South Asia        sba   2019 {txt}{c |}
+  {c |} {res}    73   1041                        South Asia        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    73   1042                        South Asia        sba   2020 {txt}{c |}
+  {c |} {res}    74   1043                        South Asia        sba   2021 {txt}{c |}
+  {c |} {res}    74   1044                        South Asia        sba   2021 {txt}{c |}
+  {c |} {res}    75   1045                        South Asia        sba   2022 {txt}{c |}
+  {c |} {res}    75   1046                        South Asia        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    76   1116                Sub-Saharan Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    76   1117                Sub-Saharan Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    77   1118                Sub-Saharan Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    77   1119                Sub-Saharan Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    78   1120                Sub-Saharan Africa       anc4   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    78   1121                Sub-Saharan Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    79   1122                Sub-Saharan Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    79   1123                Sub-Saharan Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    80   1124                Sub-Saharan Africa       anc4   2022 {txt}{c |}
+  {c |} {res}    80   1125                Sub-Saharan Africa       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    81   1126                Sub-Saharan Africa        sba   2018 {txt}{c |}
+  {c |} {res}    81   1127                Sub-Saharan Africa        sba   2018 {txt}{c |}
+  {c |} {res}    82   1128                Sub-Saharan Africa        sba   2019 {txt}{c |}
+  {c |} {res}    82   1129                Sub-Saharan Africa        sba   2019 {txt}{c |}
+  {c |} {res}    83   1130                Sub-Saharan Africa        sba   2020 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    83   1131                Sub-Saharan Africa        sba   2020 {txt}{c |}
+  {c |} {res}    84   1132                Sub-Saharan Africa        sba   2021 {txt}{c |}
+  {c |} {res}    84   1133                Sub-Saharan Africa        sba   2021 {txt}{c |}
+  {c |} {res}    85   1134                Sub-Saharan Africa        sba   2022 {txt}{c |}
+  {c |} {res}    85   1135                Sub-Saharan Africa        sba   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    86   1206           West and Central Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    86   1207           West and Central Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    86   1208           West and Central Africa       anc4   2018 {txt}{c |}
+  {c |} {res}    87   1209           West and Central Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    87   1210           West and Central Africa       anc4   2019 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    87   1211           West and Central Africa       anc4   2019 {txt}{c |}
+  {c |} {res}    88   1212           West and Central Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    88   1213           West and Central Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    88   1214           West and Central Africa       anc4   2020 {txt}{c |}
+  {c |} {res}    89   1215           West and Central Africa       anc4   2021 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    89   1216           West and Central Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    89   1217           West and Central Africa       anc4   2021 {txt}{c |}
+  {c |} {res}    90   1218           West and Central Africa       anc4   2022 {txt}{c |}
+  {c |} {res}    90   1219           West and Central Africa       anc4   2022 {txt}{c |}
+  {c |} {res}    90   1220           West and Central Africa       anc4   2022 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    91   1221           West and Central Africa        sba   2018 {txt}{c |}
+  {c |} {res}    91   1222           West and Central Africa        sba   2018 {txt}{c |}
+  {c |} {res}    91   1223           West and Central Africa        sba   2018 {txt}{c |}
+  {c |} {res}    92   1224           West and Central Africa        sba   2019 {txt}{c |}
+  {c |} {res}    92   1225           West and Central Africa        sba   2019 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    92   1226           West and Central Africa        sba   2019 {txt}{c |}
+  {c |} {res}    93   1227           West and Central Africa        sba   2020 {txt}{c |}
+  {c |} {res}    93   1228           West and Central Africa        sba   2020 {txt}{c |}
+  {c |} {res}    93   1229           West and Central Africa        sba   2020 {txt}{c |}
+  {c |} {res}    94   1230           West and Central Africa        sba   2021 {txt}{c |}
+  {c LT}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c RT}
+  {c |} {res}    94   1231           West and Central Africa        sba   2021 {txt}{c |}
+  {c |} {res}    94   1232           West and Central Africa        sba   2021 {txt}{c |}
+  {c |} {res}    95   1233           West and Central Africa        sba   2022 {txt}{c |}
+  {c |} {res}    95   1234           West and Central Africa        sba   2022 {txt}{c |}
+  {c |} {res}    95   1235           West and Central Africa        sba   2022 {txt}{c |}
+  {c BLC}{hline 8}{c -}{hline 6}{c -}{hline 33}{c -}{hline 10}{c -}{hline 6}{c BRC}
+
+{com}. duplicates tag cname indicator year, gen(x)
+
+{p 0 4}{txt}Duplicates in terms of {res} cname indicator year{p_end}
+{txt}
+{com}. // dropping duplicates
+. tab x
+
+          {txt}x {c |}      Freq.     Percent        Cum.
+{hline 12}{c +}{hline 35}
+          0 {c |}{res}      1,104       83.38       83.38
+{txt}          1 {c |}{res}        150       11.33       94.71
+{txt}          2 {c |}{res}         30        2.27       96.98
+{txt}          3 {c |}{res}         40        3.02      100.00
+{txt}{hline 12}{c +}{hline 35}
+      Total {c |}{res}      1,324      100.00
+{txt}
+{com}. drop if x != 0
+{txt}(220 observations deleted)
+
+{com}. drop x
+{txt}
+{com}. 
+. // Keeping the latest year for each country per indicator
+. bys cname indicator (year): egen x = max(year)
+{txt}
+{com}. keep if year == x
+{txt}(751 observations deleted)
+
+{com}. drop x
+{txt}
+{com}. 
+. // Reshping data wide by indicator
+. //reshape wide val_ source_, i(cname year) j(indicator) s
+. 
+. // Brining in the iso3 codes to merge with the other 2 files using kountry package
+. kountry cname, from(other) stuck marker
+
+{txt}{hline 50}
+The command has finished.
+The new variables are named {com}_ISO3N_{txt} and {com}MARKER{txt}.
+{hline 50}
+
+{com}. rename _ISO3N_ cname_n
+{res}{txt}
+{com}. kountry cname_n, from(iso3n) to(iso3c)
+
+{txt}{hline 44}
+You are converting from {com}iso3n{txt} to {com}iso3c{txt}....
+{hline 44}
+
+{hline 38}
+The command has finished.
+The new variable is named {com}_ISO3C_{txt}.
+{hline 38}
+
+{com}. drop cname_n
+{txt}
+{com}. 
+. rename _ISO3C_ ccode
+{res}{txt}
+{com}. order ccode, after(cname)
+{txt}
+{com}. drop if ccode == ""     
+{txt}(131 observations deleted)
+
+{com}. unique ccode                            // We are left with 145 countries
+{txt}Number of unique values of ccode is  {res}145
+{txt}Number of records is  {res}222
+{txt}
+{com}. // A few countries still don't have ISO3Codes e.g. Turkiye, Eswatini, Kosovo (UNSCR 1244), North Macedonia, State of Palestine, Côte d'Ivoire, Cabo Verde
+. 
+. save "${c -(}output{c )-}/indicators.dta", replace
+{txt}file D:\UNICEF\UNICEF_Assessment/03_output/indicators.dta saved
+
+{com}. 
+. *===============================================================================
+. 
+. // Reading the data file for population for weights
+. 
+. import excel using "${c -(}data{c )-}/WPP2022_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT_REV1.xlsx", ///
+>                                          sheet(Projections) cellrange(C17:X8237) first clear
+{res}{text}(22 vars, 8,220 obs)
+
+{com}.                                          
+. rename *, lower                                  
+{res}{txt}
+{com}. keep regionsubregioncountryorar iso3alphacode type year birthsthousands
+{txt}
+{com}. rename (regionsubregioncountryorar iso3alphacode birthsthousands) (cname ccode births)
+{res}{txt}
+{com}. 
+. destring births, replace force
+{txt}births: contains nonnumeric characters; {res}replaced {txt}as {res}double
+{txt}(4 missing values generated)
+{res}{txt}
+{com}. 
+. keep if type == "Country/Area"
+{txt}(2,532 observations deleted)
+
+{com}. 
+. // Keeping 2022 projected births for each country
+. sort ccode year
+{txt}
+{com}. bys ccode (year): egen x = min(year)
+{txt}
+{com}. keep if year == x
+{txt}(5,616 observations deleted)
+
+{com}. drop x
+{txt}
+{com}. 
+. // We are left with 72 countries
+. 
+. save "${c -(}output{c )-}/births.dta", replace
+{txt}file D:\UNICEF\UNICEF_Assessment/03_output/births.dta saved
+
+{com}. 
+. *===============================================================================
+. 
+. // Merging 3 prepared datasets 
+. 
+. use "${c -(}output{c )-}/indicators.dta", clear                        // Indicators data
+{txt}
+{com}. merge m:1 ccode using "${c -(}output{c )-}/births.dta", keep(3) nogen  // Births 000s data for weights
+{res}{txt}{p 0 7 2}
+(note: variable
+cname was 
+str55, now str59 to accommodate using data's values)
+{p_end}
+
+{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}               0
+{txt}{col 5}matched{col 30}{res}              89{txt}  
+{col 5}{hline 41}
+
+{com}. merge m:1 ccode using "${c -(}output{c )-}/status.dta", keep(3) nogen  // Status data 
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}               0
+{txt}{col 5}matched{col 30}{res}              89{txt}  
+{col 5}{hline 41}
+
+{com}. 
+. drop source_
+{txt}
+{com}. 
+. // Calculate population-weighted coverage for each group (on-track and off-track), calculate population-weighted averages for ANC4 and SBA
+. // Using projected births for 2022 as weights 
+. 
+. collapse (mean) val_ [pw=births], by(indicator status)
+{txt}
+{com}. 
+. save "${c -(}output{c )-}/weighted_coverge.dta", replace                                  
+{txt}file D:\UNICEF\UNICEF_Assessment/03_output/weighted_coverge.dta saved
+
+{com}. 
+. *===============================================================================
+. 
+. 
+. 
+.                                         
+.                                         
+.                                         
+.                                         
+. 
+{txt}end of do-file
+
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}D:\UNICEF\UNICEF_Assessment/05_logs/logs.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}27 Jul 2025, 23:31:00
+{txt}{.-}
+{smcl}
+{txt}{sf}{ul off}
