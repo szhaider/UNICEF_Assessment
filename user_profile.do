@@ -85,11 +85,6 @@ foreach command of local user_commands {
     cap which `command'
     if _rc == 111 ssc install `command'
   }
-
-//Theme for the charts
-set scheme white_tableau
-graph set window fontface "Arial Narrow"
-
 *===============================================================================	
 	
 *-----------------------------------------------------------------------------

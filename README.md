@@ -5,7 +5,7 @@ This repository contains the assessment for UNICEF D&A Education in UNICEF’s C
 ### Instructions on reproducing the project
 
 -   User needs to execute the profile setting do file [user_profile.do] in the root folder
--   Once the dialogue box appears, select the project running do file [run_project] to complete the process
+-   Once the dialogue box appears, select the project running do file in the project root folder [run_project] to complete the process
 -   Next, user can run the run_project do file to execute the project end-to-end
 -   These steps prepare the clean data and store the files in the output folder
 -   Finally, user can initiate the R project [UNICEF_Assessment] in the root folder
