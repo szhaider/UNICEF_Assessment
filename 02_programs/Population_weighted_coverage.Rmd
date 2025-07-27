@@ -1,0 +1,58 @@
+---
+title: "Population Weighted Coverage"
+output:
+  html_document:
+    toc: true
+output_file: "../03_output/my_report.html"
+---
+
+
+```{r, echo=FALSE, include=FALSE}
+knitr::opts_knit$set(output.dir = "../03_output")
+
+
+library(here, warn.conflicts = FALSE)
+library(tidyverse, warn.conflicts = FALSE)
+library(haven, warn.conflicts = FALSE)
+theme_set(theme_light())
+
+# Final Data with population-weighted coverage
+data <- 
+  read_dta(here("03_output", "weighted_coverge.dta"))
+
+# View(data)
+```
+
+#### 📉 A visualization comparing population-weighted coverage for on-track vs. off-track countries
+
+We observe a significant lag in off-track countries compared to on-track countries in both indicators including **Antenatal care (ANC4)** and **Skilled birth attendance (SBA)**. However, *Antenatal care* coverage (54%) is much worse for off-track countries than *Skilled birth attendance* coverage (67%) for off-track countries. Nevertheless, it must be kept in mind that our sample of countries is quite limited due to restrictive coverage in births (000s) data.
+
+```{r, echo=FALSE, fig.width=6, fig.height=4}
+
+p <- 
+data %>% 
+  mutate(indicator = ifelse(
+    indicator == "anc4", "Antenatal Care (ANC4)", "Skilled Birth Assistance (SBA)"
+  )) %>% 
+  ggplot(aes(status, val_/100, fill=status)) +
+  geom_col()+
+  facet_wrap(~indicator)+
+  labs(x = "", y="",
+       fill="Status")+
+  scale_y_continuous(labels = scales::percent_format())
+
+print(p)
+
+#Saving Plot in figures folder 
+# ggsave(plot = last_plot(),
+#        width = 7, height = 6,
+#        filename = "04_figures/pop_weighted_coverage.jpeg")
+
+# Saving the output file in the output folder
+# rmarkdown::render(here("02_programs","Population_weighted_coverage.Rmd"), output_file = here("03_output","my_report.html"))
+```
+
+
+
+
+
