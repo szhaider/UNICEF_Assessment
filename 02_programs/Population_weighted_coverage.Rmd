@@ -15,9 +15,6 @@ knitr::opts_knit$set(output.dir = "../03_output")
 suppressMessages(if(!require("pacman")) install.packages("pacman"))
 suppressMessages(pacman::p_load(tidyverse, haven, here))
 
-library(here, warn.conflicts = FALSE)
-library(tidyverse, warn.conflicts = FALSE)
-library(haven, warn.conflicts = FALSE)
 theme_set(theme_light())
 
 # Final Data with population-weighted coverage
