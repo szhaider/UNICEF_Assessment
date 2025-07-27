@@ -7,7 +7,7 @@ This repository contains the assessment for UNICEF D&A Education in UNICEF’s C
 -   User needs to execute the profile setting do file [user_profile.do] in the root folder
 -   Once the dialogue box appears, select the project running do file [run_project] to complete the process
 -   Next, user can run the run_project do file to execute the project end-to-end
--   These steps prepared the clean data and store the files in the output folder
+-   These steps prepare the clean data and store the files in the output folder
 -   Finally, user can initiate the R project [UNICEF_Assessment] in the root folder
 -   Then open the R-script [02_programs/Population_weighted_coverage.R]
 -   Executing the R-script will prepare the output (Final_Output.HTML) file with chart and short explanation
@@ -29,10 +29,11 @@ This repository contains the assessment for UNICEF D&A Education in UNICEF’s C
 
 #### 03_output 📁
 
--   Contains all the output files produced by the project:
+-   Contains all the clean data and output file produced by the project:
     -   status.dta [cleaned data for Off-Track and On-Track countries]
     -   indicators.dta [cleaned data for ANC4 & SBA indicators in long format UNICEF Global Data Repository]
     -   births.dta [cleaned projected births (000s) data from the UN World Population Prospects, 2022]
+    -   Final_Report.HTML [Final output document with the chart and a short explanation]
 
 #### 04_figures 📁
 

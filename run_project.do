@@ -19,7 +19,7 @@ if _rc {
 
 cap log close
 
-log using "$logs/logs.smcl", replace
+log using "${clone}/05_logs/logs.smcl", replace
 
 do "${clone}/02_programs/data_prep.do"  
 

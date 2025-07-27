@@ -1,9 +1,9 @@
 {smcl}
-{com}{sf}{ul off}{txt}{.-}
+{txt}{sf}{ul off}{.-}
       name:  {res}<unnamed>
-       {txt}log:  {res}D:\UNICEF\UNICEF_Assessment/05_logs/logs.smcl
+       {txt}log:  {res}D:/UNICEF/UNICEF_Assessment/05_logs/logs.smcl
   {txt}log type:  {res}smcl
- {txt}opened on:  {res}27 Jul 2025, 23:30:48
+ {txt}opened on:  {res}28 Jul 2025, 00:43:39
 {txt}
 {com}. 
 . do "${c -(}clone{c )-}/02_programs/data_prep.do"  
@@ -16,7 +16,7 @@
 . 
 . *===============================================================================
 . // Reading on-track, off-track classification file
-. import excel using "${c -(}data{c )-}/On-track and off-track countries.xlsx", first clear
+. import excel using "${c -(}clone{c )-}/01_rawdata/On-track and off-track countries.xlsx", first clear
 {res}{text}(3 vars, 200 obs)
 
 {com}. 
@@ -50,6 +50,7 @@ Acceleration Needed {c |}{res}         59       29.50       29.50
               Total {c |}{res}        200      100.00
 {txt}
 {com}. 
+. // Defining 2 broader categories as needed
 . replace status = "On-track" if inlist(status, "Achieved", "On Track")
 {txt}(141 real changes made)
 
@@ -57,39 +58,46 @@ Acceleration Needed {c |}{res}         59       29.50       29.50
 {txt}(59 real changes made)
 
 {com}. 
-. save "${c -(}output{c )-}/status.dta", replace 
-{txt}file D:\UNICEF\UNICEF_Assessment/03_output/status.dta saved
+. tab status   // 59 off-track countries
+
+        {txt}Status.U5MR {c |}      Freq.     Percent        Cum.
+{hline 20}{c +}{hline 35}
+          Off-track {c |}{res}         59       29.50       29.50
+{txt}           On-track {c |}{res}        141       70.50      100.00
+{txt}{hline 20}{c +}{hline 35}
+              Total {c |}{res}        200      100.00
+{txt}
+{com}. 
+. save "${c -(}clone{c )-}/03_output/status.dta", replace 
+{txt}file D:/UNICEF/UNICEF_Assessment/03_output/status.dta saved
 
 {com}. 
 . *===============================================================================
 . // Reading ANC4 and SBA data file retreived from UNICEF Data Warehouse as on 07/27/2025
-. import excel using "${c -(}data{c )-}/GLOBAL_DATAFLOW_2018-2022.xlsx", first clear 
+. import excel using "${c -(}clone{c )-}/01_rawdata/GLOBAL_DATAFLOW_2018-2022.xlsx", first clear 
 {res}{text}(21 vars, 1,325 obs)
 
 {com}. 
 . rename *, lower
 {res}{txt}
-{com}. 
-. rename (geographicarea time_period obs_value data_source) (cname year val_ source_)
+{com}. rename (geographicarea time_period obs_value data_source) (cname year val source)
 {res}{txt}
 {com}. 
-. keep cname indicator year val_ source_  //sex
+. keep cname indicator year val source  //sex - no gender disaggregation available in data
 {txt}
 {com}. drop in 1325
 {txt}(1 observation deleted)
 
-{com}. unique cname
+{com}. unique cname   // 222 inclusing regional aggregates
 {txt}Number of unique values of cname is  {res}222
 {txt}Number of records is  {res}1324
 {txt}
 {com}. 
-. destring year val_, replace
+. destring year val, replace
 {txt}year: all characters numeric; {res}replaced {txt}as {res}int
-{txt}val_: all characters numeric; {res}replaced {txt}as {res}double
+{txt}val: all characters numeric; {res}replaced {txt}as {res}double
 {txt}
 {com}. 
-. //replace sex = "_mf" if sex == "Total"
-. 
 . tab indicator,m
 
                               {txt}Indicator {c |}      Freq.     Percent        Cum.
@@ -417,6 +425,10 @@ Antenatal care 4+ visits - percentage.. {c |}{res}        512       38.67       
 {com}. drop x
 {txt}
 {com}. 
+. // final duplicates check 
+. isid cname indicator year  // Okay
+{txt}
+{com}. 
 . // Keeping the latest year for each country per indicator
 . bys cname indicator (year): egen x = max(year)
 {txt}
@@ -426,10 +438,8 @@ Antenatal care 4+ visits - percentage.. {c |}{res}        512       38.67       
 {com}. drop x
 {txt}
 {com}. 
-. // Reshping data wide by indicator
-. //reshape wide val_ source_, i(cname year) j(indicator) s
-. 
 . // Brining in the iso3 codes to merge with the other 2 files using kountry package
+. // user_profile.do execution should install this package in the local machine if not already installed
 . kountry cname, from(other) stuck marker
 
 {txt}{hline 50}
@@ -464,17 +474,15 @@ The new variable is named {com}_ISO3C_{txt}.
 {txt}Number of unique values of ccode is  {res}145
 {txt}Number of records is  {res}222
 {txt}
-{com}. // A few countries still don't have ISO3Codes e.g. Turkiye, Eswatini, Kosovo (UNSCR 1244), North Macedonia, State of Palestine, Côte d'Ivoire, Cabo Verde
-. 
-. save "${c -(}output{c )-}/indicators.dta", replace
-{txt}file D:\UNICEF\UNICEF_Assessment/03_output/indicators.dta saved
+{com}. 
+. save "${c -(}clone{c )-}/03_output/indicators.dta", replace
+{txt}file D:/UNICEF/UNICEF_Assessment/03_output/indicators.dta saved
 
 {com}. 
 . *===============================================================================
 . 
-. // Reading the data file for population for weights
-. 
-. import excel using "${c -(}data{c )-}/WPP2022_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT_REV1.xlsx", ///
+. // Reading the data file for projected births (2022) for weights
+. import excel using "${c -(}clone{c )-}/01_rawdata/WPP2022_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT_REV1.xlsx", ///
 >                                          sheet(Projections) cellrange(C17:X8237) first clear
 {res}{text}(22 vars, 8,220 obs)
 
@@ -490,8 +498,7 @@ The new variable is named {com}_ISO3C_{txt}.
 {txt}births: contains nonnumeric characters; {res}replaced {txt}as {res}double
 {txt}(4 missing values generated)
 {res}{txt}
-{com}. 
-. keep if type == "Country/Area"
+{com}. keep if type == "Country/Area"    // Keeping only countries
 {txt}(2,532 observations deleted)
 
 {com}. 
@@ -506,19 +513,22 @@ The new variable is named {com}_ISO3C_{txt}.
 {com}. drop x
 {txt}
 {com}. 
-. // We are left with 72 countries
-. 
-. save "${c -(}output{c )-}/births.dta", replace
-{txt}file D:\UNICEF\UNICEF_Assessment/03_output/births.dta saved
+. unique ccode            // We are left with 72 countries
+{txt}Number of unique values of ccode is  {res}72
+{txt}Number of records is  {res}72
+{txt}
+{com}. 
+. save "${c -(}clone{c )-}/03_output/births.dta", replace
+{txt}file D:/UNICEF/UNICEF_Assessment/03_output/births.dta saved
 
 {com}. 
 . *===============================================================================
 . 
 . // Merging 3 prepared datasets 
 . 
-. use "${c -(}output{c )-}/indicators.dta", clear                        // Indicators data
+. use "${c -(}clone{c )-}/03_output/indicators.dta", clear                        // Indicators data
 {txt}
-{com}. merge m:1 ccode using "${c -(}output{c )-}/births.dta", keep(3) nogen  // Births 000s data for weights
+{com}. merge m:1 ccode using "${c -(}clone{c )-}/03_output/births.dta", keep(3) nogen  // 2022 Births (000s) data for weights
 {res}{txt}{p 0 7 2}
 (note: variable
 cname was 
@@ -531,7 +541,7 @@ str55, now str59 to accommodate using data's values)
 {txt}{col 5}matched{col 30}{res}              89{txt}  
 {col 5}{hline 41}
 
-{com}. merge m:1 ccode using "${c -(}output{c )-}/status.dta", keep(3) nogen  // Status data 
+{com}. merge m:1 ccode using "${c -(}clone{c )-}/03_output/status.dta", keep(3) nogen  // Status data 
 {res}
 {txt}{col 5}Result{col 38}# of obs.
 {col 5}{hline 41}
@@ -540,36 +550,33 @@ str55, now str59 to accommodate using data's values)
 {col 5}{hline 41}
 
 {com}. 
-. drop source_
+. drop source
+{txt}
+{com}. unique ccode            // finally, we are left with 50 countries
+{txt}Number of unique values of ccode is  {res}50
+{txt}Number of records is  {res}89
 {txt}
 {com}. 
 . // Calculate population-weighted coverage for each group (on-track and off-track), calculate population-weighted averages for ANC4 and SBA
 . // Using projected births for 2022 as weights 
 . 
-. collapse (mean) val_ [pw=births], by(indicator status)
+. collapse (mean) val [pw=births], by(indicator status)
 {txt}
 {com}. 
-. save "${c -(}output{c )-}/weighted_coverge.dta", replace                                  
-{txt}file D:\UNICEF\UNICEF_Assessment/03_output/weighted_coverge.dta saved
+. save "${c -(}clone{c )-}/03_output/weighted_coverge.dta", replace                                 
+{txt}file D:/UNICEF/UNICEF_Assessment/03_output/weighted_coverge.dta saved
 
 {com}. 
-. *===============================================================================
-. 
-. 
-. 
-.                                         
-.                                         
-.                                         
-.                                         
+. *===============================================================================                                
 . 
 {txt}end of do-file
 
 {com}. 
 . log close
       {txt}name:  {res}<unnamed>
-       {txt}log:  {res}D:\UNICEF\UNICEF_Assessment/05_logs/logs.smcl
+       {txt}log:  {res}D:/UNICEF/UNICEF_Assessment/05_logs/logs.smcl
   {txt}log type:  {res}smcl
- {txt}closed on:  {res}27 Jul 2025, 23:31:00
+ {txt}closed on:  {res}28 Jul 2025, 00:43:51
 {txt}{.-}
 {smcl}
 {txt}{sf}{ul off}
