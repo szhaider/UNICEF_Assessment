@@ -12,6 +12,8 @@ editor_options:
 ```{r, echo=FALSE, include=FALSE}
 knitr::opts_knit$set(output.dir = "../03_output")
 
+suppressMessages(if(!require("pacman")) install.packages("pacman"))
+suppressMessages(pacman::p_load(tidyverse, haven, here))
 
 library(here, warn.conflicts = FALSE)
 library(tidyverse, warn.conflicts = FALSE)
