@@ -12,7 +12,7 @@ This repository contains the assessment for UNICEF D&A Education in UNICEF’s C
 -   Then open the R-script [02_programs/Population_weighted_coverage.Rmd]
 -   Executing (knitting) the R-script will prepare the output (Final_Output.HTML) file with chart and short explanation
 
-### 📁 The code is organized in the following manner
+### 📁 The project is organized in the following manner
 
 #### 01_data 📁
 
